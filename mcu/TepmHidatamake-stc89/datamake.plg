@@ -1,0 +1,63 @@
+<html>
+<body>
+<pre>
+<h1>礦ision Build Log</h1>
+<h2>Project:</h2>
+C:\Users\DRAGON\Desktop\管理系统\第三方生成\硬件\mcu\TepmHidatamake\datamake.uvproj
+Project File Date:  06/18/2022
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling main.c...
+MAIN.C(24): error C202: 'AUXR': undefined identifier
+MAIN.C(25): error C202: 'AUXR': undefined identifier
+Target not created
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?DHT11_RECEIVE?MAIN
+Program Size: data=21.0 xdata=0 code=280
+"datamake" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?DHT11_RECEIVE?MAIN
+Program Size: data=21.0 xdata=0 code=280
+"datamake" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+MAIN.C(104): warning C280: 'i': unreferenced local variable
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?DHT11_RECEIVE?MAIN
+Program Size: data=21.0 xdata=0 code=275
+"datamake" - 0 Error(s), 2 Warning(s).
+Build target 'Target 1'
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?DHT11_RECEIVE?MAIN
+Program Size: data=21.0 xdata=0 code=275
+"datamake" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?DHT11_RECEIVE?MAIN
+Program Size: data=21.0 xdata=0 code=275
+"datamake" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+MAIN.C(117): warning C206: 'DHT11_delay_ms': missing function-prototype
+MAIN.C(117): error C267: 'DHT11_delay_ms': requires ANSI-style prototype
+Target not created
+Build target 'Target 1'
+compiling main.c...
+MAIN.C(104): warning C280: 'i': unreferenced local variable
+linking...
+Program Size: data=10.0 xdata=0 code=92
+"datamake" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+linking...
+Program Size: data=10.0 xdata=0 code=92
+creating hex file from "datamake"...
+"datamake" - 0 Error(s), 0 Warning(s).

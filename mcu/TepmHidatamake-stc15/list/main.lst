@@ -1,0 +1,327 @@
+C51 COMPILER V9.01   MAIN                                                                  06/19/2022 23:23:04 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\list\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND PRINT(.\list\main.lst) OBJECT(.\list\main.
+                    -obj)
+
+line level    source
+
+   1          
+   2          /*------------------------------------------------------------------*/
+   3          /* --- STC MCU International Limited -------------------------------*/
+   4          /* --- STC 1T Series MCU RC Demo -----------------------------------*/
+   5          /* --- Mobile: (86)13922805190 -------------------------------------*/
+   6          /* --- Fax: 86-0513-55012956,55012947,55012969 ---------------------*/
+   7          /* --- Tel: 86-0513-55012928,55012929,55012966 ---------------------*/
+   8          /* --- Web: www.GXWMCU.com -----------------------------------------*/
+   9          /* --- QQ:  800003751 ----------------------------------------------*/
+  10          /* If you want to use the program or the program referenced in the  */
+  11          /* article, please specify in which data and procedures from STC    */
+  12          /*------------------------------------------------------------------*/
+  13          
+  14          
+  15          #include        "config.h"
+  16          #include        "USART1.h"
+  17          #include        "delay.h"
+  18          #define dht11_io P33   //P2.0口作为数据读取接口
+  19          
+  20          
+  21          /*************  功能说明        **************
+  22          
+  23          双串口全双工中断方式收发通讯程序。
+  24          
+  25          通过PC向MCU发送数据, MCU收到后通过串口把收到的数据原样返回.
+  26          
+  27          ******************************************/
+  28          
+  29          /*************  本地常量声明    **************/
+  30          
+  31          
+  32          /*************  本地变量声明    **************/
+  33          u16 U8FLAG;
+  34          u8  U8temp;
+  35          u8  U8T_data_H,U8T_data_L,U8RH_data_H,U8RH_data_L,U8checkdata;
+  36          u8  U8T_data_H_temp,U8T_data_L_temp,U8RH_data_H_temp,U8RH_data_L_temp,U8checkdata_temp;
+  37          u8  U8comdata;
+  38          u8 datas=0;
+  39          
+  40          /*************  本地函数声明    **************/
+  41          void  read_byte(); //读取一字节的数据,并赋值给U8comdata
+  42          u8  read_temp();//读取温度，返回温度值
+  43          u8  read_humi();//读取湿度，返回湿度值
+  44          
+  45          
+  46          void  Delay30us(); //22.1184M晶振精确延时30微秒
+  47          void  Delay40us(); //22.1184M晶振精确延时40微秒
+  48          void  Delay18ms(); //22.1184M晶振精确延时30毫秒
+  49          void Delay1000ms();//22.1184M晶振精确延时1000毫秒
+  50          void serial_send_byte(u8 dat);
+  51          void serial_send_string(u8 *dat);
+  52          
+  53          /*************  外部函数和变量声明 *****************/
+  54          
+C51 COMPILER V9.01   MAIN                                                                  06/19/2022 23:23:04 PAGE 2   
+
+  55          
+  56          /*************  串口1初始化函数 *****************/
+  57          void    UART_config(void)
+  58          {
+  59   1              COMx_InitDefine         COMx_InitStructure;                                     //结构定义
+  60   1              COMx_InitStructure.UART_Mode      = UART_8bit_BRTx;             //模式,       UART_ShiftRight,UART_8bit_BRTx,UART_9b
+             -it,UART_9bit_BRTx
+  61   1              COMx_InitStructure.UART_BRT_Use   = BRT_Timer2;                 //使用波特率,   BRT_Timer1, BRT_Timer2 (注意: 串口2固定
+             -使用BRT_Timer2)
+  62   1              COMx_InitStructure.UART_BaudRate  = 115200ul;                   //波特率, 一般 110 ~ 115200
+  63   1              COMx_InitStructure.UART_RxEnable  = ENABLE;                             //接收允许,   ENABLE或DISABLE
+  64   1              COMx_InitStructure.BaudRateDouble = DISABLE;                    //波特率加倍, ENABLE或DISABLE
+  65   1              COMx_InitStructure.UART_Interrupt = ENABLE;                             //中断允许,   ENABLE或DISABLE
+  66   1              COMx_InitStructure.UART_Polity    = PolityLow;                  //中断优先级, PolityLow,PolityHigh
+  67   1              COMx_InitStructure.UART_P_SW      = UART1_SW_P30_P31;   //切换端口,   UART1_SW_P30_P31,UART1_SW_P36_P37,UAR
+             -T1_SW_P16_P17(必须使用内部时钟)
+  68   1              COMx_InitStructure.UART_RXD_TXD_Short = DISABLE;                //内部短路RXD与TXD, 做中继, ENABLE,DISABLE
+  69   1              USART_Configuration(USART1, &COMx_InitStructure);               //初始化串口1 USART1,USART2
+  70   1      
+  71   1              //PrintString1("STC15F2K60S2 UART1 Test Prgramme!\r\n");        //SUART1发送一个字符串
+  72   1      }
+  73          
+  74          
+  75          /**********************************************/
+  76          void main(void)
+  77          {
+  78   1              Delay1000ms();
+  79   1              //u8 i;
+  80   1      
+  81   1              UART_config();
+  82   1              EA = 1;
+  83   1      
+  84   1              dht11_io = 1;
+  85   1              //DHT11_delay_ms(1500);//DHT11上电后要等待1S以越过不稳定状态在此期间不能发送任何指令
+  86   1              while (1)
+  87   1              {
+  88   2                      datas=read_temp();
+  89   2                      //serial_send_string("温度:");
+  90   2                      serial_send_byte(datas%100/10+'0');//十位
+  91   2                      serial_send_byte(datas%10+'0');//个位
+  92   2                      serial_send_byte(',');
+  93   2                      datas=read_humi();
+  94   2                      //serial_send_string("湿度:");
+  95   2                      serial_send_byte(datas%100/10+'0');//十位
+  96   2                      serial_send_byte(datas%10+'0');//个位
+  97   2                      serial_send_string(":");
+  98   2                      Delay1000ms();
+  99   2                      
+ 100   2                      /*delay_ms(1);
+ 101   2                      if(COM1.RX_TimeOut > 0)         //超时计数
+ 102   2                      {
+ 103   2                              if(--COM1.RX_TimeOut == 0)
+ 104   2                              {
+ 105   2                                      if(COM1.RX_Cnt > 0)
+ 106   2                                      {
+ 107   2                                              for(i=0; i<COM1.RX_Cnt; i++)    TX1_write2buff(RX1_Buffer[i]);  //收到的数据原样返回
+ 108   2                                      }
+ 109   2                                      COM1.RX_Cnt = 0;
+ 110   2                              }
+ 111   2                      } */
+ 112   2              }
+ 113   1      }
+C51 COMPILER V9.01   MAIN                                                                  06/19/2022 23:23:04 PAGE 3   
+
+ 114          
+ 115          void read_byte()
+ 116          {
+ 117   1      u8 i;
+ 118   1      for(i=0;i<8;i++)
+ 119   1      {
+ 120   2      U8FLAG=2;
+ 121   2      while((!dht11_io)&&U8FLAG++);//超时3毫秒跳出
+ 122   2      Delay30us();
+ 123   2      U8temp=0;
+ 124   2      if(dht11_io)U8temp=1;
+ 125   2      U8FLAG=2;
+ 126   2      while((dht11_io)&&U8FLAG++);//超时3毫秒跳出
+ 127   2      if(U8FLAG==1)break;
+ 128   2      U8comdata<<=1;
+ 129   2       U8comdata|=U8temp;
+ 130   2      }
+ 131   1      }
+ 132          
+ 133          
+ 134          u8 read_temp()
+ 135          {
+ 136   1      dht11_io=0;
+ 137   1      Delay18ms();
+ 138   1      dht11_io=1;
+ 139   1      Delay40us();
+ 140   1      dht11_io=1;
+ 141   1      if(!dht11_io)
+ 142   1      {
+ 143   2      U8FLAG=2;
+ 144   2      while((!dht11_io)&&U8FLAG++);//超时3毫秒跳出
+ 145   2      U8FLAG=2;
+ 146   2      while((dht11_io)&&U8FLAG++);//超时3毫秒跳出
+ 147   2      read_byte();
+ 148   2       U8RH_data_H_temp=U8comdata;
+ 149   2       read_byte();
+ 150   2       U8RH_data_L_temp=U8comdata;
+ 151   2       read_byte();
+ 152   2       U8T_data_H_temp=U8comdata;
+ 153   2       read_byte();
+ 154   2       U8T_data_L_temp=U8comdata;
+ 155   2       read_byte();
+ 156   2       U8checkdata_temp=U8comdata;
+ 157   2       dht11_io=1;
+ 158   2      
+ 159   2      U8temp=(U8T_data_H_temp+U8T_data_L_temp+U8RH_data_H_temp+U8RH_data_L_temp);
+ 160   2       if(U8temp==U8checkdata_temp)
+ 161   2       {
+ 162   3        U8RH_data_H=U8RH_data_H_temp;
+ 163   3        U8RH_data_L=U8RH_data_L_temp;
+ 164   3      U8T_data_H=U8T_data_H_temp;
+ 165   3        U8T_data_L=U8T_data_L_temp;
+ 166   3        U8checkdata=U8checkdata_temp;
+ 167   3       }
+ 168   2      }
+ 169   1      return U8T_data_H;
+ 170   1      }
+ 171          
+ 172          
+ 173          u8 read_humi()
+ 174          {
+ 175   1      dht11_io=0;
+C51 COMPILER V9.01   MAIN                                                                  06/19/2022 23:23:04 PAGE 4   
+
+ 176   1      Delay18ms();
+ 177   1      dht11_io=1;
+ 178   1      Delay40us();
+ 179   1      dht11_io=1;
+ 180   1      if(!dht11_io)
+ 181   1      {
+ 182   2      U8FLAG=2;
+ 183   2      while((!dht11_io)&&U8FLAG++);//超时3毫秒跳出
+ 184   2      U8FLAG=2;
+ 185   2      while((dht11_io)&&U8FLAG++);//超时3毫秒跳出
+ 186   2      read_byte();
+ 187   2       U8RH_data_H_temp=U8comdata;
+ 188   2       read_byte();
+ 189   2       U8RH_data_L_temp=U8comdata;
+ 190   2       read_byte();
+ 191   2       U8T_data_H_temp=U8comdata;
+ 192   2       read_byte();
+ 193   2       U8T_data_L_temp=U8comdata;
+ 194   2       read_byte();
+ 195   2       U8checkdata_temp=U8comdata;
+ 196   2       dht11_io=1;
+ 197   2      
+ 198   2      U8temp=(U8T_data_H_temp+U8T_data_L_temp+U8RH_data_H_temp+U8RH_data_L_temp);
+ 199   2       if(U8temp==U8checkdata_temp)
+ 200   2       {
+ 201   3        U8RH_data_H=U8RH_data_H_temp;
+ 202   3        U8RH_data_L=U8RH_data_L_temp;
+ 203   3      U8T_data_H=U8T_data_H_temp;
+ 204   3        U8T_data_L=U8T_data_L_temp;
+ 205   3        U8checkdata=U8checkdata_temp;
+ 206   3       }
+ 207   2      }
+ 208   1      return U8RH_data_H;
+ 209   1      }
+ 210          void serial_send_byte(u8 dat)
+ 211          {
+ 212   1      SBUF=dat;
+ 213   1      while(!TI);
+ 214   1      TI=0;
+ 215   1      }
+ 216          
+ 217          
+ 218          void serial_send_string(u8 *dat)
+ 219          {
+ 220   1      while(*dat)
+ 221   1      {
+ 222   2      serial_send_byte(*dat++);
+ 223   2      }
+ 224   1      }
+ 225          void Delay30us() //@22.1184MHz精确延时30微秒
+ 226          {
+ 227   1      unsigned char i, j;
+ 228   1      
+ 229   1      
+ 230   1      i = 1;
+ 231   1      j = 162;
+ 232   1      do
+ 233   1      {
+ 234   2      while (--j);
+ 235   2      } while (--i);
+ 236   1      }
+ 237          
+C51 COMPILER V9.01   MAIN                                                                  06/19/2022 23:23:04 PAGE 5   
+
+ 238          
+ 239          void Delay40us() //@22.1184MHz精确延时40微秒
+ 240          {
+ 241   1      unsigned char i, j;
+ 242   1      
+ 243   1      
+ 244   1      _nop_();
+ 245   1      i = 1;
+ 246   1      j = 217;
+ 247   1      do
+ 248   1      {
+ 249   2      while (--j);
+ 250   2      } while (--i);
+ 251   1      }
+ 252          
+ 253          
+ 254          void Delay18ms() //@22.1184MHz精确延时18毫秒
+ 255          {
+ 256   1      unsigned char i, j, k;
+ 257   1      
+ 258   1      
+ 259   1      _nop_();
+ 260   1      i = 2;
+ 261   1      j = 132;
+ 262   1      k = 67;
+ 263   1      do
+ 264   1      {
+ 265   2      do
+ 266   2      {
+ 267   3      while (--k);
+ 268   3      } while (--j);
+ 269   2      } while (--i);
+ 270   1      }
+ 271          
+ 272          
+ 273          void Delay1000ms() //@22.1184MHz
+ 274          {
+ 275   1      unsigned char i, j, k;
+ 276   1      
+ 277   1      
+ 278   1      _nop_();
+ 279   1      _nop_();
+ 280   1      i = 85;
+ 281   1      j = 12;
+ 282   1      k = 155;
+ 283   1      do
+ 284   1      {
+ 285   2      do
+ 286   2      {
+ 287   3      while (--k);
+ 288   3      } while (--j);
+ 289   2      } while (--i);
+ 290   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    559    ----
+   CONSTANT SIZE    =      2    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     15      17
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.01   MAIN                                                                  06/19/2022 23:23:04 PAGE 6   
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
